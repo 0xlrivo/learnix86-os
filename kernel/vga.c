@@ -53,13 +53,23 @@ terminal_putentryat(char c, uint8_t color, size_t x, size_t y)
 	terminal_buffer[index] = vga_entry(c, color);
 }
 
+// terminal_column is already 0 when called
 void terminal_scroll() {
-	for (size_t y = 1; y < VGA_HEIGHT; y++) {
+	size_t cur, next;
+	// set active row to the last one
+	terminal_row = VGA_HEIGHT - 1; 
+	// move rows up by 1
+	for (size_t y = 0; y < VGA_HEIGHT - 1; y++) {
 		for (size_t x = 0; x < VGA_WIDTH; x++) {
-			const size_t cur_idx = y * VGA_WIDTH + x;
-			const size_t prev_idx = (y-1) * VGA_WIDTH + x;
-			terminal_buffer[prev_idx] = terminal_buffer[cur_idx];
+			cur = y * VGA_WIDTH + x;
+			next = (y+1) * VGA_WIDTH + x;
+			terminal_buffer[cur] = terminal_buffer[next];
 		}
+	}
+	// clean last row
+	for (size_t x = 0; x < VGA_WIDTH; x++) {
+		cur = terminal_row * VGA_WIDTH + x;
+		terminal_buffer[cur] = vga_entry(' ', terminal_color);
 	}
 }
 
@@ -68,16 +78,16 @@ void
 terminal_putchar(char c) 
 {
 	// newline characther support
-	if (c == '\n') {		
-		terminal_row++;        //@audit-issue breaks if we're at the last row
-		terminal_column = 0;
+	if (c == '\n') {
+		terminal_column = 0;		
+		if(++terminal_row == VGA_HEIGHT)
+			terminal_scroll();
 	} else {
 		terminal_putentryat(c, terminal_color, terminal_column, terminal_row);
 		if (++terminal_column == VGA_WIDTH) { // end of row
 			terminal_column = 0;
 			if (++terminal_row == VGA_HEIGHT) // last row
-				terminal_row = VGA_HEIGHT - 1;
-				terminal_scroll(); 
+				terminal_scroll();
 		}
 	}
 }

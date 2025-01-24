@@ -13,7 +13,7 @@ The foundamental features that MUST be added:
 - [x] Multiboot compatible bootloader
 - [ ] VGA Terminal
     - [x] newline characther support
-    - [ ] scrollable rows
+    - [x] terminal scrolling
 - [ ] x86 Paging
 - [ ] Scheduling Processes
 

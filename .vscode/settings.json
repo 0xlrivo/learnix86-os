@@ -1,0 +1,7 @@
+{
+    "files.associations": {
+        "cstring": "c",
+        "stdio.h": "c"
+    },
+    "makefile.configureOnOpen": false
+}

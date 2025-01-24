@@ -1,5 +1,5 @@
-#include "../inc/vga.h"
-#include "../inc/learnixlibc.h"
+#include "inc/vga.h"
+#include "../learnixlibc/inc/string.h"
 #include <stdbool.h>
 #include <stdint.h>
 #include <stddef.h>
@@ -60,11 +60,7 @@ void terminal_scroll() {
 	terminal_row = VGA_HEIGHT - 1; 
 	// move rows up by 1
 	for (size_t y = 0; y < VGA_HEIGHT - 1; y++) {
-		for (size_t x = 0; x < VGA_WIDTH; x++) {
-			cur = y * VGA_WIDTH + x;
-			next = (y+1) * VGA_WIDTH + x;
-			terminal_buffer[cur] = terminal_buffer[next];
-		}
+		memcpy(terminal_buffer + y * VGA_WIDTH, terminal_buffer + (y + 1) * VGA_WIDTH, VGA_WIDTH * sizeof(uint16_t));
 	}
 	// clean last row
 	for (size_t x = 0; x < VGA_WIDTH; x++) {

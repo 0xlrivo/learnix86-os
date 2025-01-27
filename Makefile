@@ -25,7 +25,7 @@ kernel: $(OUTDIR)/kernel/boot.o $(OFILES)
 	$(GCC) -T linker.ld -o $(OUTDIR)/myos.bin -ffreestanding -O2 -nostdlib $(OUTDIR)/kernel/boot.o $(OFILES) -lgcc
 
 qemu: setup kernel
-	qemu-system-i386 -kernel $(OUTDIR)/myos.bin
+	qemu-system-i386 -kernel $(OUTDIR)/myos.bin -serial tcp::1234,server,nowait
 
 clean:
 	rm -rf $(OUTDIR)

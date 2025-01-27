@@ -5,7 +5,7 @@
 .set MAGIC,    0x1BADB002       /* 'magic number' lets bootloader find the header */
 .set CHECKSUM, -(MAGIC + FLAGS) /* checksum of above, to prove we are multiboot */
 
-/* 
+/*
 Declare a multiboot header that marks the program as a kernel. These are magic
 values that are documented in the multiboot standard. The bootloader will
 search for this signature in the first 8 KiB of the kernel file, aligned at a
@@ -76,6 +76,18 @@ _start:
 	runtime support to work as well.
 	*/
 
+	# load the GDT
+	mov $gdtr, %eax
+	lgdt (%eax)
+
+	# set registers to use the GDT
+	mov $0x10, %ax		# Data Segment Selector (2)
+    mov %ax, %ds		# DS: Data Segment
+    mov %ax, %es		# ES: Extra Segment
+    mov %ax, %fs		# FS
+    mov %ax, %gs		# GS
+    mov %ax, %ss		# SS: Stack Segment
+
 	/*
 	Enter the high-level kernel. The ABI requires the stack is 16-byte
 	aligned at the time of the call instruction (which afterwards pushes
@@ -103,7 +115,32 @@ _start:
 	jmp 1b
 
 /*
-Set the size of the _start symbol to the current location '.' minus its start.
-This is useful when debugging or when you implement call tracing.
+	Set the size of the _start symbol to the current location '.' minus its start.
+	This is useful when debugging or when you implement call tracing.
 */
 .size _start, . - _start
+
+.global keyboard_isr_wrapper
+.type keyboard_isr_wrapper, @function
+keyboard_isr_wrapper:
+    pushal
+    cld
+    call keyboard_handler   /* C code that does the actual work */
+    popal
+    iret
+
+/* DATA SECTION */
+.section .data
+.align 8
+
+/* Setup a Global Descriptor table that maps the entire 4GB as both code and data R/W segments */
+gdt:
+    .quad 0x0000000000000000  # Null descriptor
+    .quad 0x00CF9A000000FFFF  # Code segment: base=0, limit=4GB, type=0x9A
+    .quad 0x00CF92000000FFFF  # Data segment: base=0, limit=4GB, type=0x92
+
+gdt_end:
+
+gdtr:
+	.word gdt_end - gdt - 1  # Limit (GDT size - 1)
+	.long gdt				 # Base  (address at which the GDT exists)

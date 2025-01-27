@@ -6,10 +6,13 @@
 /* copies size bytes from src to dest without checking for their overlapping */
 void* memcpy(void* restrict dst, const void* restrict src, size_t size);
 
+/* sets a memory block to the specified value */
+void* memset(void* ptr, int value, size_t num);
+
 /* copies the C string pointed by source into the one pointed by destination including the terminating character */
 char* strcpy(char* destination, const char* source);
 
-/* 
+/*
     compares two C strings
     returns:
         <0 when ptr2 > ptr1

@@ -1,0 +1,7 @@
+{
+    "files.associations": {
+        "idt.h": "c",
+        "pic.h": "c",
+        "keyboard.h": "c"
+    }
+}

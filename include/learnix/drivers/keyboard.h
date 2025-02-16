@@ -10,7 +10,7 @@
 #define LEFT_SHIFT_RELEASED 0xAA
 
 #define CAPS_LOCK_PRESSED 0x3A
-#define CAPS_LOCK_RELEASED 0xBA
+#define CAPS_LOCK_RELEASED 0xBA // useless
 
 void keyboard_main();
 

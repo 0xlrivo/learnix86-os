@@ -32,7 +32,6 @@ void idt_load();
 
 void idt_set_gate(int n, uint32_t handler, uint16_t selector, uint8_t type_attributes);
 
-/* generic ISR wrapper */
 extern void irq1_wrapper();
 void irq1_handler();
 

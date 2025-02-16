@@ -4,16 +4,14 @@
 
 void kernel_main() {
 
-    // initialize the PIC
+    // initialize and remap the PIC for protected mode usage
     pic_init();
 
     // load the Interrupt Descriptor Table
     idt_init();
 
-    // initialize vga terminal
+    // initialize the vga terminal
     terminal_initialize();
-
-    printf("Hello Kernel!");
 
     // hang
     while(1);

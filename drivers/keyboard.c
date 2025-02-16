@@ -33,7 +33,7 @@ void keyboard_main() {
     if(scancode & KEY_RELEASED_MASK) {
         switch(scancode) {
             case LEFT_SHIFT_RELEASED: {
-                status &= ~1;
+                status &= ~1;           // set status 0th bit to 0
                 break;
             }
             default: 
@@ -44,7 +44,7 @@ void keyboard_main() {
     else {
         switch(scancode) {
             case LEFT_SHIFT_PRESSED: {
-                status |= (1 << 0);
+                status |= (1 << 0);     // set status 0th bit to 1
                 break;
             }
             case CAPS_LOCK_PRESSED: {

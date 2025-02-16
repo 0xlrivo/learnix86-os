@@ -2,7 +2,7 @@ AS = i686-elf-as
 GCC = i686-elf-gcc
 
 # Kernel compilation flags
-KERN_GCCFLAGS = -ffreestanding -O2 -Wall -Wextra -I include -I libc/include -D__is_libk
+KERN_GCCFLAGS = -ffreestanding -O2 -Wall -Wextra -I include -I libc/include -D__is_libk -g
 # LIBC compilation flags
 LIBC_GCCFLAGS = -ffreestanding -O2 -Wall -Wextra
 
@@ -42,7 +42,11 @@ kernel: $(OUTDIR)/boot/boot.o $(KERN_OFILES)
 	$(GCC) -T boot/linker.ld -o $(OUTDIR)/learnixos.bin -ffreestanding -O2 -nostdlib $(OUTDIR)/boot/boot.o $(KERN_OFILES) -lgcc
 
 qemu: setup kernel
-	qemu-system-i386 -kernel $(OUTDIR)/learnixos.bin -serial tcp::1234,server,nowait
+	qemu-system-i386 -kernel $(OUTDIR)/learnixos.bin
+
+# in another terminal run gdb and then issue the command target remote localhost:1234
+gdb: setup kernel
+	qemu-system-i386 -kernel $(OUTDIR)/learnixos.bin -s -S
 
 clean:
 	rm -rf $(OUTDIR)

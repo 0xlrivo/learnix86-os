@@ -3,7 +3,7 @@
 #include <stdint.h>
 #include <learnix/idt.h>
 #include <learnix/pic.h>
-#include <learnix/x86.h>
+#include <learnix/x86/x86.h>
 #include <learnix/drivers/keyboard.h>
 
 idtr_t idtr;

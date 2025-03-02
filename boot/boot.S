@@ -44,6 +44,13 @@ _start:
     # the kernel will enable them later after setup
     cli
 
+    # setup C stack
+	movl $stack_top, %esp
+
+    # multiboot info are calling parameters for kernel_main
+    pushl %ebx
+    pushl %eax
+
 	# load the GDT
 	mov $gdtr, %eax
 	lgdt (%eax)
@@ -55,9 +62,6 @@ _start:
     mov %ax, %fs		# FS
     mov %ax, %gs		# GS
     mov %ax, %ss		# SS: Stack Segment
-
-    # setup C stack
-	movl $stack_top, %esp
 
 	# Transfer control to the main kernel.
 	call kernel_main

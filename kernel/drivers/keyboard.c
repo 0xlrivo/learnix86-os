@@ -1,7 +1,7 @@
 #include <stdint.h>
 #include <stdio.h>
 #include <ctype.h>
-#include <learnix/x86.h>
+#include <learnix/x86/x86.h>
 #include <learnix/drivers/keyboard.h>
 
 // bit 0: shift pressed

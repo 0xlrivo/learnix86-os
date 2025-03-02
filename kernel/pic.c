@@ -1,5 +1,5 @@
 #include <learnix/pic.h>
-#include <learnix/x86.h>
+#include <learnix/x86/x86.h>
 #include <stdint.h>
 
 void pic_init() {

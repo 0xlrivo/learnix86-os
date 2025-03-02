@@ -7,7 +7,7 @@ KERN_GCCFLAGS = -ffreestanding -O2 -Wall -Wextra -I include -I libc/include -D__
 LIBC_GCCFLAGS = -ffreestanding -O2 -Wall -Wextra
 
 # C files in root folder
-KERN_CFILES = $(shell find . -name "*.c")
+KERN_CFILES = $(shell find ./kernel -name "*.c")
 # Object files 
 KERN_OFILES = $(patsubst ./%, $(OUTDIR)/%, $(KERN_CFILES:.c=.o))
 
@@ -24,7 +24,7 @@ all: setup kernel
 setup:
 	mkdir -p $(OUTDIR)
 	@find ./boot -type d -exec mkdir -p $(OUTDIR)/{} \;
-	@find ./drivers -type d -exec mkdir -p $(OUTDIR)/{} \;
+	@find ./kernel -type d -exec mkdir -p $(OUTDIR)/{} \;
 	@find ./libc -type d -exec mkdir -p $(OUTDIR)/{} \;
 
 # compile C files into object (.o) files without linking
@@ -38,8 +38,8 @@ $(OUTDIR)/boot/boot.o: boot/boot.S
 # @todo libc should be compiled separately and then linked to the kernel object files
 
 # link object files together
-kernel: $(OUTDIR)/boot/boot.o $(KERN_OFILES)
-	$(GCC) -T boot/linker.ld -o $(OUTDIR)/learnixos.bin -ffreestanding -O2 -nostdlib $(OUTDIR)/boot/boot.o $(KERN_OFILES) -lgcc
+kernel: $(OUTDIR)/boot/boot.o $(KERN_OFILES) $(LIBC_OFILES)
+	$(GCC) -T boot/linker.ld -o $(OUTDIR)/learnixos.bin -ffreestanding -O2 -nostdlib $(OUTDIR)/boot/boot.o $(KERN_OFILES) $(LIBC_OFILES) -lgcc
 
 qemu: setup kernel
 	qemu-system-i386 -kernel $(OUTDIR)/learnixos.bin

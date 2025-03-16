@@ -146,7 +146,7 @@
    /* Multiboot info version number */
    multiboot_uint32_t flags;
  
-   /* Available memory from BIOS */
+   /* Available memory from BIOS in kilobytes (KB)*/
    multiboot_uint32_t mem_lower;
    multiboot_uint32_t mem_upper;
  

@@ -19,7 +19,7 @@ void kernel_main(uint32_t magic, multiboot_info_t *mbi) {
     }
 
     // initialize virtual memory
-    //vm_setup();
+    vm_setup(mbi->mem_lower, mbi->mem_upper);
 
     // initialize and remap the PIC for protected mode usage
     pic_init();

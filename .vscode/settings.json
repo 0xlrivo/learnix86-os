@@ -2,6 +2,12 @@
     "files.associations": {
         "idt.h": "c",
         "pic.h": "c",
-        "keyboard.h": "c"
-    }
+        "keyboard.h": "c",
+        "mmu.h": "c",
+        "vm.h": "c",
+        "x86.h": "c",
+        "multiboot.h": "c",
+        "cstring": "c"
+    },
+    "C_Cpp.errorSquiggles": "disabled"
 }

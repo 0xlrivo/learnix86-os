@@ -1,5 +1,5 @@
 #include <stdio.h>
-#include <stdlib.h>
+#include <string.h>
 #include <learnix/vm.h>
 #include <learnix/x86/x86.h>
 #include <learnix/x86/mmu.h>
@@ -17,22 +17,47 @@ static char* nextfree;
 static uint32_t npages;
 
 // linked list of physicalPageInfo which contains metadata for each physical page
-static physicalPageInfo_t* pages;
+physicalPageInfo_t* pages;
+
+// points to the next free physical page to allocate
+physicalPageInfo_t* free_list;
 
 // kernel's page directory
 pde_t* kern_pgdir;  
 
-// @todo maybe use memlower in future
-void vm_setup(uint32_t memlower, uint32_t memupper) {    
+void print_bits(uint32_t num) {
+    for (int i = 31; i >= 0; i--) {  // Iterate from MSB to LSB
+        printf("%d", (num >> i) & 1); // Extract and print each bit
+        if (i % 8 == 0) { // Optional: Add a space every 8 bits
+            printf(" ");
+        }
+    }
+    printf("\n");
+}
+
+void vm_setup(uint32_t memlower, uint32_t memupper) {
+    printf("%d KB\n", memlower);
+
     // number of avaiable physical page in the extended memory (above 1MB)
     npages = (memupper * 1024) / PGSIZE;
+
+    printf("npages: %d\n", npages);
 
     // allocate the pages linked list
     pages = (physicalPageInfo_t*)boot_alloc(npages * sizeof(physicalPageInfo_t));
 
-    kern_pgdir = (pde_t*)boot_alloc(PGSIZE);    // allocate a physical page to hold the kernel page directory
-    memset((void*)kern_pgdir, 0x00, PGSIZE);    // zero-out the page directory's memory
+    page_init();
 
+    for(uint32_t i = 0; i < 10; i++) {
+        physicalPageInfo_t* p = &pages[i];
+        printf("%x | %x, %d\n", page2pa(p), p->next, p->ref_count);
+    }
+
+    printf("%x, %d\n", page2pa(free_list), page_num(page2pa(free_list)));
+}
+
+void pgdir_load(pde_t* pgdir) {
+    lcr3((uint32_t)&pgdir);   // load the pgdir address into CR3
 }
 
 void* boot_alloc(uint32_t n) {
@@ -57,3 +82,24 @@ void* boot_alloc(uint32_t n) {
 
     return result;
 }
+
+// initialize the physical page array (pages)
+// the fist free page will be the last (npages-1)
+void page_init() {
+    // 1MB - 2MB is free
+    for(uint32_t i = 0; i < page_num(KERN_BASE); i++) {
+        pages[i].next = free_list;
+        pages[i].ref_count = 0;
+        free_list = &pages[i];
+    }
+    // 2MB - endkernel + sizeof(pages) is occupied and MUST never be mapped
+    physaddr_t nxt = PGROUNDUP((physaddr_t)endkernel + (npages * sizeof(physicalPageInfo_t)));
+    // the rest is free
+    for(uint32_t i = page_num(nxt); i < npages; i++) {
+        pages[i].next = free_list;
+        pages[i].ref_count = 0;
+        free_list = &pages[i];
+    }
+}
+
+void map_va(pde_t* pgdir, void* va, uint32_t pa);

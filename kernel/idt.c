@@ -28,9 +28,6 @@ void idt_load() {
 
     // load the table with the lidt instruction
     asm volatile ("lidt (%0)" : : "r" (&idtr));
-
-    // enables interrupts
-    asm volatile ("sti");
 }
 
 void idt_set_gate(int n, uint32_t handler, uint16_t selector, uint8_t type_attributes) {

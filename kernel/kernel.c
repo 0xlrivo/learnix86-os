@@ -18,14 +18,17 @@ void kernel_main(uint32_t magic, multiboot_info_t *mbi) {
         panic("[GRUB] invalid memory map");
     }
 
-    // initialize virtual memory
-    vm_setup(mbi->mem_lower, mbi->mem_upper);
-
     // initialize and remap the PIC for protected mode usage
     pic_init();
 
     // load the Interrupt Descriptor Table
     idt_init();
+
+    // initialize virtual memory
+    vm_setup(mbi->mem_lower, mbi->mem_upper);
+
+    // enables interrupts
+    asm volatile ("sti");
 
     // hang
     while(1);

@@ -1,1 +1,1 @@
-gdb -tui -x gdb-commands.txt
+gdb -x gdb-commands.txt

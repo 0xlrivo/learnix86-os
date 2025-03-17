@@ -42,7 +42,8 @@ kernel: $(OUTDIR)/boot/boot.o $(KERN_OFILES) $(LIBC_OFILES)
 	$(GCC) -T boot/linker.ld -o $(OUTDIR)/learnixos.bin -ffreestanding -O2 -nostdlib $(OUTDIR)/boot/boot.o $(KERN_OFILES) $(LIBC_OFILES) -lgcc
 
 qemu: setup kernel
-	qemu-system-i386 -kernel $(OUTDIR)/learnixos.bin
+	rm serial.log
+	qemu-system-i386 -kernel $(OUTDIR)/learnixos.bin -serial file:serial.log
 
 # in another terminal run gdb and then issue the command target remote localhost:1234
 gdb: setup kernel

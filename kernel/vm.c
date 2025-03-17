@@ -1,8 +1,8 @@
-#include <stdio.h>
 #include <string.h>
 #include <learnix/vm.h>
 #include <learnix/x86/x86.h>
 #include <learnix/x86/mmu.h>
+#include <learnix/drivers/serial.h>
 
 /*
  * @brief x86 virtual memory implementation
@@ -25,35 +25,16 @@ physicalPageInfo_t* free_list;
 // kernel's page directory
 pde_t* kern_pgdir;  
 
-void print_bits(uint32_t num) {
-    for (int i = 31; i >= 0; i--) {  // Iterate from MSB to LSB
-        printf("%d", (num >> i) & 1); // Extract and print each bit
-        if (i % 8 == 0) { // Optional: Add a space every 8 bits
-            printf(" ");
-        }
-    }
-    printf("\n");
-}
-
 void vm_setup(uint32_t memlower, uint32_t memupper) {
-    printf("%d KB\n", memlower);
-
     // number of avaiable physical page in the extended memory (above 1MB)
     npages = (memupper * 1024) / PGSIZE;
 
-    printf("npages: %d\n", npages);
+    serial_printf("-- Avaiable Memory --\nmemlower: %d Kb\nmemupper: %d Kb\nnpages: %d\n", memlower, memupper, npages);
 
     // allocate the pages linked list
     pages = (physicalPageInfo_t*)boot_alloc(npages * sizeof(physicalPageInfo_t));
 
     page_init();
-
-    for(uint32_t i = 0; i < 10; i++) {
-        physicalPageInfo_t* p = &pages[i];
-        printf("%x | %x, %d\n", page2pa(p), p->next, p->ref_count);
-    }
-
-    printf("%x, %d\n", page2pa(free_list), page_num(page2pa(free_list)));
 }
 
 void pgdir_load(pde_t* pgdir) {

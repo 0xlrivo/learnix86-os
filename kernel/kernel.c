@@ -4,6 +4,7 @@
 #include <learnix/vm.h>
 #include <learnix/vga.h>
 #include <learnix/idt.h>
+#include <learnix/drivers/serial.h>
 
 void kernel_main(uint32_t magic, multiboot_info_t *mbi) {
 
@@ -20,6 +21,11 @@ void kernel_main(uint32_t magic, multiboot_info_t *mbi) {
 
     // initialize and remap the PIC for protected mode usage
     pic_init();
+
+    // initiaize the COM1 serial port
+    if(serial_init() < 0) {
+        panic("cannot init COM1 serial port");
+    }
 
     // load the Interrupt Descriptor Table
     idt_init();

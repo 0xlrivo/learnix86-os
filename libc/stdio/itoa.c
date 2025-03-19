@@ -16,6 +16,15 @@ char* itoa(int value, char *str, int base) {
         value /= base;
     } while(value > 0);
 
+    // pad hex numbers to 8 digits (32 bit)
+    if (base == 16) {
+        while(i < 8) {
+            str[i++] = '0';
+        }
+        str[i++] = 'x';
+        str[i++] = '0';
+    }
+
     if (is_negative)
         str[i++] = '-';
 

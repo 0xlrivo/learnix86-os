@@ -1,6 +1,8 @@
 #ifndef MMU_H
 #define MMU_H
 
+#include <stdint.h>
+
 // A virtual address 'la' has a three-part structure as follows:
 //
 // +--------10------+-------10-------+---------12----------+
@@ -10,13 +12,13 @@
 //  \--- PDX(va) --/ \--- PTX(va) --/
 
 // page directory index
-#define PDX(va)         (((uint)(va) >> PDXSHIFT) & 0x3FF)
+#define PDX(va)         (((uintptr_t)(va) >> PDXSHIFT) & 0x3FF)
 
 // page table index
-#define PTX(va)         (((uint)(va) >> PTXSHIFT) & 0x3FF)
+#define PTX(va)         (((uintptr_t)(va) >> PTXSHIFT) & 0x3FF)
 
 // construct virtual address from indexes and offset
-#define PGADDR(d, t, o) ((uint)((d) << PDXSHIFT | (t) << PTXSHIFT | (o)))
+#define PGADDR(d, t, o) ((uintptr_t)((d) << PDXSHIFT | (t) << PTXSHIFT | (o)))
 
 // Page directory and page table constants.
 #define NPDENTRIES      1024    // # directory entries per page directory
@@ -36,7 +38,7 @@
 #define PTE_PS          0x080   // Page Size
 
 // Address in page table or page directory entry
-#define PTE_ADDR(pte)   ((uint)(pte) & ~0xFFF)
-#define PTE_FLAGS(pte)  ((uint)(pte) &  0xFFF)
+#define PTE_ADDR(pte)   ((uintptr_t)(pte) & ~0xFFF)
+#define PTE_FLAGS(pte)  ((uintptr_t)(pte) &  0xFFF)
 
 #endif // !MMU_H

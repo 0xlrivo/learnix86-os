@@ -9,7 +9,8 @@
         "multiboot.h": "c",
         "cstring": "c",
         "serial.h": "c",
-        "stdio.h": "c"
+        "stdio.h": "c",
+        "vga.h": "c"
     },
     "C_Cpp.errorSquiggles": "disabled"
 }

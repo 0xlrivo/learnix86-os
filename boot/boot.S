@@ -22,7 +22,7 @@ stack_top:
 # are available, as the bootloader might have loaded its multiboot structures or
 # modules there. This lets the bootloader know it must avoid the addresses.
 .section .bss, "aw", @nobits
-	.align 4096
+	.align 4096 
 boot_page_directory:
 	.skip 4096
 boot_page_table1:
@@ -107,6 +107,10 @@ _start:
 
 	# Set up the stack.
 	mov $stack_top, %esp
+
+	# push multiboot info and magic number as calling parameters for kernel_main
+	pushl %ebx
+    pushl %eax
 
 	# Enter the high-level kernel.
 	call kernel_main

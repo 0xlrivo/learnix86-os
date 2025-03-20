@@ -31,3 +31,19 @@ make gdb
 
 ./gdb.sh    # <- on another shell
 ```
+
+## Notes
+
+### Virtual Memory
+- This is an higher-half kernel, meaning that it is virtually mapped starting from 0xC0000000 (3 GB)
+
+You need to rewrite kernel_main to activate paging IMMEDIATELY before doing anything else
+You will:
+- map kernel's code pages from 0xC0000000 (3 GB)
+- identity map kernel's code pages which contains vm setup code to their physical addresses
+    - this is NECESSARY otherwise you page fault after paging is enabled
+- load the kernel's page directory into CR3
+- enable paging in CR0
+- jump to a predefined VIRTUAL MEMORY ENTRYPOINT... aka the first instruction to execute after paging is enabled
+    - after this point, EIP will contain VIRTUAL ADDRESSES, not physical ones
+    - such function should unmap the identity mapped pages because they aren't needed anymore

@@ -17,6 +17,9 @@
 // page table index
 #define PTX(va)         (((uintptr_t)(va) >> PTXSHIFT) & 0x3FF)
 
+// offset
+#define PGOFFSET(va)    ((uintptr_t)(va) & 0xFFF)
+
 // construct virtual address from indexes and offset
 #define PGADDR(d, t, o) ((uintptr_t)((d) << PDXSHIFT | (t) << PTXSHIFT | (o)))
 

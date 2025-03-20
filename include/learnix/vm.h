@@ -111,6 +111,9 @@ void vm_setup(uint32_t memlower, uint32_t memupper);
 /// @note only called with paging disabled so it uses physical addresses
 void page_init();
 
+/// called by vm_setup to initiaze the kernel's page directory
+void kern_pgdir_init();
+
 /// minimal physical memory allocator that MUST only be used before the actual paging system is running
 /// @note only called with paging disabled so it uses physical addresses
 /// @param n bytes to allocate (rounded up to the next page)
@@ -119,7 +122,8 @@ void* boot_alloc(uint32_t n);
 /// returns the next free physical page
 /// @note works with kernel virtual addresses
 /// @param zero if set zero-out the entire physical page
-physical_page_metadata_t* kalloc(int zero);
+/// @param usekva if set uses the kernel virtual address of the page (assuming paging is turned on)
+physical_page_metadata_t* kalloc(int zero, int usekva);
 
 /// attempts to free the given physical page if ref_count == 0, does nothing if not possible to free it
 /// @note works with kernel virtual addresses
@@ -129,8 +133,22 @@ void kfree(physical_page_metadata_t* pp);
 /// returns a pointer to the pte (page table entry) of given virtual address (va)
 /// @param pgdir pointer to the page directory to use
 /// @param va virtual address
+/// @param create if set, in case va isn't mapped, allocates a physical page for the page table
 /// @return kernel virtual address of the pte
-pte_t* pgdir_walk(pde_t* pgdir, uintptr_t va);
+pte_t* pgdir_walk(pde_t* pgdir, uintptr_t va, int create);
+
+/// returns the physical address of a given virtual address
+/// @param pgdir pointer to the page directory to use
+/// @param va virtual address to translate
+/// @return the physical address if va is mapped in pgdir otherwise NULL
+physaddr_t va_to_pa(pde_t* pgdir, uintptr_t va);
+
+/// maps the given physical page at virtual address va in the provided page directory
+/// @param pgdir pointer to the page directory to use
+/// @param pp pointer to the physical page metadata to map
+/// @param va virtual address
+/// @return 1 on success and 0 on failure
+int map_pp_to_va(pde_t* pgdir, physical_page_metadata_t* pp, uintptr_t va);
 
 /// loads the provided pgdir into the CR3 register, used in scheduling to context-switch
 /// @param pgdir pointer to the page directory to load

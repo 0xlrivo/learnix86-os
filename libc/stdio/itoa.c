@@ -1,8 +1,9 @@
 #include <stdio.h>
+#include <stdint.h>
 #include <stdbool.h>
 
-char* itoa(int value, char *str, int base) {
-    char *digits = "0123456789abcdef";
+char* itoa(uint32_t value, char *str, int base) {
+    char *digits = "0123456789ABCDEF";
     bool is_negative = false;
     int i = 0;
 

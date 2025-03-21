@@ -22,9 +22,11 @@ stack_top:
 # are available, as the bootloader might have loaded its multiboot structures or
 # modules there. This lets the bootloader know it must avoid the addresses.
 .section .bss, "aw", @nobits
-	.align 4096 
+	.align 4096
+	.global boot_page_directory
 boot_page_directory:
 	.skip 4096
+	.global boot_page_table1
 boot_page_table1:
 	.skip 4096
 # Further page tables may be required if the kernel grows beyond 3 MiB.
@@ -65,7 +67,10 @@ _start:
 	# Loop to the next entry if we haven't finished.
 	loop 1b
 
-3:
+3:	
+	# Map the multiboot_info structure as "present, writable"
+	movl $(0x00009000 | 0x003), boot_page_table1 - 0xC0000000 + 9 * 4
+
 	# Map VGA video memory to 0xC03FF000 as "present, writable".
 	movl $(0x000B8000 | 0x003), boot_page_table1 - 0xC0000000 + 1023 * 4
 
@@ -109,6 +114,9 @@ _start:
 	mov $stack_top, %esp
 
 	# push multiboot info and magic number as calling parameters for kernel_main
+	# for simplicitly we directly pass the higher-half virtual address of the multiboot_info
+	# that we've mapped previously
+	addl $0xC0000000, %ebx
 	pushl %ebx
     pushl %eax
 

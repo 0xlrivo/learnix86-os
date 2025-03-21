@@ -4,7 +4,7 @@
 #include <learnix/multiboot.h>
 #include <learnix/drivers/vga.h>
 
-void kernel_main(uint32_t magic, physaddr_t mbi_phys) {
+void kernel_main(uint32_t magic, multiboot_info_t* mbi) {
 
     // initialize the VGA driver
     terminal_initialize();
@@ -12,14 +12,12 @@ void kernel_main(uint32_t magic, physaddr_t mbi_phys) {
     if (magic != MULTIBOOT_BOOTLOADER_MAGIC) {
         panic("[GRUB] invalid magic number");
     }
+    if (!(mbi->flags >> 6 & 0x1)) {
+        panic("[GRUB] invalid memory map");
+    }
 
-    multiboot_info_t* mbi = (multiboot_info_t*)(mbi_phys + KERN_BASE_VRT);
-    printf("%d\n", mbi->mem_lower);
+    // setup the virtual memory manager
+    vm_setup(mbi->mem_lower, mbi->mem_upper);
 
-	/* at this point we're in protected mode with paging enabled with the first 4MB mapped at 3GB va*/
-    puts("Hello Kernel with x86 paging on\n");
-
-    vm_setup(0, 0);
-
-    while(1){};
+    while(1) {};
 }

@@ -53,6 +53,12 @@ typedef uint32_t physaddr_t;      // physical address
 // physical page metadata flags:
 #define PPM_KERN 0x000F             // is a kernel's code physical page
 
+/// returns the corresponding kernel virtual address (>3GB) of the physical address provided
+/// @param pa the physical address to translate
+inline void* pa2kva(physaddr_t pa) {
+    return (void*)(pa + KERN_BASE_VRT);
+}
+
 /// physical page metadata
 /// @param next pointer to the next free page
 /// @param ref_count number of virtual memory mappings to this physical page
@@ -74,5 +80,8 @@ void pages_setup();
 /// @param create if set, in case va isn't mapped, allocates a physical page for the page table
 /// @return kernel virtual address of the pte
 pte_t* pgdir_walk(pde_t* pgdir, uintptr_t va, int create);
+
+/// returns the physical address of va
+physaddr_t va_to_pa(pde_t* pgdir, uintptr_t va);
 
 #endif // !VM_H

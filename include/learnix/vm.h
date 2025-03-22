@@ -53,12 +53,6 @@ typedef uint32_t physaddr_t;      // physical address
 // physical page metadata flags:
 #define PPM_KERN 0x000F             // is a kernel's code physical page
 
-/// returns the corresponding kernel virtual address (>3GB) of the physical address provided
-/// @param pa the physical address to translate
-inline void* pa2kva(physaddr_t pa) {
-    return (void*)(pa + KERN_BASE_VRT);
-}
-
 /// physical page metadata
 /// @param next pointer to the next free page
 /// @param ref_count number of virtual memory mappings to this physical page
@@ -68,11 +62,44 @@ typedef struct __physical_page_info {
     uint16_t flags;
 } physical_page_metadata_t;
 
+extern physical_page_metadata_t* pages;
+
+/// returns the page number of the given physical address
+inline uint32_t page_num(physaddr_t pa) {
+    return (PGROUNDDOWN(pa) - EXT_MEM_BASE) >> 12;
+}
+
+// returns the physical address of a given physical_page_metada struct
+inline physaddr_t page2pa(physical_page_metadata_t *pp) {
+	return EXT_MEM_BASE + ((pp - pages) * PGSIZE);
+}
+
+/// returns the corresponding kernel virtual address (>3GB) of the physical address provided
+/// @param pa the physical address to translate
+inline void* pa2kva(physaddr_t pa) {
+    return (void*)(pa + KERN_BASE_VRT);
+}
+
+inline void* pp2kva(physical_page_metadata_t* pp) {
+    return pa2kva(page2pa(pp));
+}
+
+/// returns the corresponding physical address of the given kernel virtual address
+inline physaddr_t kva2pa(uintptr_t va) {
+    return (physaddr_t)(va - KERN_BASE_VRT);
+}
+
 /// called once in kernel_main to initialize the virtual memory system
 void vm_setup(uint32_t memlower, uint32_t memupper);
 
 /// called by vm_setup() to initialize the pages[] array
 void pages_setup();
+
+/// returns the next free physical page
+physical_page_metadata_t* kalloc();
+
+/// frees the provided physical page if ref_count is 0 and returns it, NULL on error
+physical_page_metadata_t* kfree(physical_page_metadata_t* pp);
 
 /// returns a pointer to the pte (page table entry) of given virtual address (va)
 /// @param pgdir pointer to the page directory to use
@@ -83,5 +110,11 @@ pte_t* pgdir_walk(pde_t* pgdir, uintptr_t va, int create);
 
 /// returns the physical address of va
 physaddr_t va_to_pa(pde_t* pgdir, uintptr_t va);
+
+/// maps va at pa
+void map_va(pde_t* pgdir, uintptr_t va, physaddr_t pa);
+
+/// maps the given physical page to va
+void map_pp(pde_t* pgdir, physical_page_metadata_t* pp, uintptr_t va);
 
 #endif // !VM_H

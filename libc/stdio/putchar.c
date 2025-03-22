@@ -1,14 +1,14 @@
 #include <stdio.h>
 
 #if defined(__is_libk)
-#include <learnix/vga.h>
+#include <learnix/drivers/vga.h>
 #endif
 
-int putchar(int ic) {
+int putchar(int c) {
 #if defined(__is_libk)
-	terminal_putchar((char)ic);
+	terminal_putchar((char)c);  // kernel's libc calls the VGA driver
 #else
-	// TODO: Implement stdio and the write system call.
+	// TODO: userland's libc will use the write syscall
 #endif
-	return ic;
+	return c;
 }

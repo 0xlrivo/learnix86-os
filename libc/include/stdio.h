@@ -1,18 +1,18 @@
-#ifndef STDIO_H
-#define STDIO_H
+#ifndef LEARNIX_LIBC_STDIO_H
+#define LEARNIX_LIBC_STDIO_H
+
+#include <stdint.h>
+#include <stddef.h>
 
 #define EOF (-1)
 
-typedef uint32_t long unsiged int;
+/// writes a characther on the standard output
+int putchar(int c);
 
-/* converts an integer number into a string and stores the result in str */
-char* itoa(uint32_t value, char *str, int base);
-
-/* prints a formatted string */
-void printf(const char *format, ...);
-
-int putchar(int);
-
+/// writes a C-string on the standard output
 int puts(const char*);
+
+/// writes formatted data on the standard output
+void printf(const char *format, ...);
 
 #endif

@@ -1,214 +1,167 @@
+#include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <learnix/vm.h>
 #include <learnix/x86/x86.h>
 #include <learnix/x86/mmu.h>
-#include <learnix/drivers/serial.h>
 
-/*
- * @brief x86 virtual memory implementation
-*/ 
+extern char _kernel_end[];
 
-// linker symbol that points at the end of kernel's compiled code
-extern char endkernel[];    
+// symbol defined in boot/boot.S which points to the kernel's page directory
+extern char boot_page_directory[];
 
-// points to the next byte of free physical memory, used by boot_alloc()
-char* nextfree;      
+// total number of physical pages
+uint32_t npages;
 
-// number of physical pages in extended memory
-uint32_t npages;     
+// physical page metadata array of size npages * sizeof(physical_page_metadata_t)
+physical_page_metadata_t* pages;
 
-// linked list of physical pages metadata
-physical_page_metadata_t* pages;    
+// points to the next free physical page to service allocation requests
+physical_page_metadata_t* pages_free_list;
 
-// points to the next free physical page to allocate
-physical_page_metadata_t* free_page_list;    
-
-// kernel's page directory
-pde_t* kern_pgdir;  
+// kernel page directory's virtual address
+pde_t* kern_pgdir;
 
 void vm_setup(uint32_t memlower, uint32_t memupper) {
-    // compute the number of physical pages in the extended memory (above 1MB)
+    // setup the kern_pgdir
+    kern_pgdir = (pte_t*)boot_page_directory;
+
+    // compute upper memory total of physical pages
     npages = (memupper * 1024) / PGSIZE;
+    
+    printf("[LOG] memupper: %d KB for a total of %d pages\n", memupper, npages);
 
-    // allocate a page for the kernel's page directory
-    kern_pgdir = boot_alloc(PGSIZE);
-    memset(kern_pgdir, 0, PGSIZE);
+    // initialize the physical page tracking structure
+    pages_setup();
 
-    // allocate enough physical pages to contain the pages[] array
-    pages = (physical_page_metadata_t*)boot_alloc(npages * sizeof(physical_page_metadata_t));
-
-    // initialize mappable physical pages and page_free_list to avoid allocating kernel code pages
-    page_init();
-
-    // initialize the kernel's page directory
-    kern_pgdir_init();
-
-    // load the kernel page directory into CR3
-    pgdir_load(kern_pgdir);
-
-    // activate paging
-    uint32_t cr0 = rcr0();
-    cr0 |= 0x80000001;
-    lcr0(cr0);
-
-    // jump to the next instruction's kernel virtual address
-    uint32_t first_paged_instruction = pa2kva(0x200bb3);
-    asm volatile("jmp %0" : : "r" (first_paged_instruction));
+    physical_page_metadata_t* p = kalloc(1);
+    printf("got physical page: %d with pa %x", page_num(page2pa(p)), page2pa(p));
 }
 
-// the fist free page will be the last (npages-1)
-void page_init() {
-    uint32_t i;
+// @todo also allocate low-mem pages after parsing multiboot struct
+void pages_setup() {
+    uint32_t i, va, pa;
 
-    // 1MB - 2MB is free
-    for(i = 0; i < page_num(KERN_BASE_PHYS); i++) {
-        pages[i].next = free_page_list;
-        pages[i].ref_count = 0;
-        free_page_list = &pages[i];
+    // allocate space for pages[] starting from 1MB physical
+    pages = (physical_page_metadata_t*)pa2kva(EXT_MEM_BASE);
+
+    // how many pages are needed to contain the pages[] array... must virtually map those to avoid faults
+    uint32_t pages_to_map = ((npages * sizeof(physical_page_metadata_t)) / PGSIZE) + 1;
+
+    // and map those starting from 1MB physical 
+    for (i = 0, va = pages, pa = EXT_MEM_BASE; i < pages_to_map; i++, va += PGSIZE, pa += PGSIZE) {
+        map_va(kern_pgdir, va, pa);
     }
 
-    // 2MB - nextfree is occupied by kernel code, pages[] and kern_pgdir
-    for (i = page_num(KERN_BASE_PHYS); i < page_num(nextfree); i++) {
-        pages[i].next = NULL;
+    // 1MB - pages_to_map is occupied by pages[]
+    for (i = page_num(EXT_MEM_BASE); i < pages_to_map; i++) {
         pages[i].ref_count = 0;
+        pages[i].flags = PPM_KERN;
+        pages[i].next = NULL;
+    }
+
+    // pages_to_map - 2MB is free
+    for (i = pages_to_map; i < page_num(KERN_BASE_PHYS); i++) {
+        pages[i].ref_count = 0;
+        pages[i].flags = 0;
+        pages[i].next = pages_free_list;
+        pages_free_list = &pages[i];
+    }
+
+    // 2MB - endkernel is occupied by kernel code
+    for (i = page_num(KERN_BASE_PHYS); i < page_num(kva2pa(_kernel_end)); i++) {
+        pages[i].ref_count = 0;
+        pages[i].flags = PPM_KERN;
+        pages[i].next = NULL;
     }
 
     // the rest is free
-    for(i = page_num(nextfree); i < npages; i++) {
-        pages[i].next = free_page_list;
+    for (i; i < npages; i++) {
         pages[i].ref_count = 0;
-        free_page_list = &pages[i];
+        pages[i].flags = 0;
+        pages[i].next = pages_free_list;
+        pages_free_list = &pages[i];
     }
 }
 
-void kern_pgdir_init() {
-    physaddr_t pa;
-    uintptr_t va;
+physical_page_metadata_t* kalloc() {
+    // fetch the next free page from the linked list
+    physical_page_metadata_t* pp = pages_free_list;
 
-    // 1. kernel's code pages will be mapped from KERN_BASE_VRT
-    for (pa = KERN_BASE_PHYS, va = KERN_BASE_VRT; pa < nextfree; pa += PGSIZE, va += PGSIZE) {
-        map_pp_to_va(kern_pgdir, pa2page(pa), va);
-        serial_printf("va %x mapped at %x\n", va, va_to_pa(kern_pgdir, va));
-    }
+    // panic if out-of-pages
+    if (pp == NULL)
+        panic("[KALLOC] out-of-pages");
 
-    // 2. recursively map the kern_pgdir into itself at KERN_BASE_VRT - 4096
-    map_pp_to_va(kern_pgdir, pa2page((physaddr_t)kern_pgdir), KERN_BASE_VRT - PGSIZE);
-    serial_printf("va %x mapped at %x\n", KERN_BASE_VRT - PGSIZE, va_to_pa(kern_pgdir, KERN_BASE_VRT - PGSIZE));
-}
+    // update the free_page_list
+    pages_free_list = pp->next;
 
-void* boot_alloc(uint32_t n) {
-    // the first physical address of the allocated region
-    void* result;
-
-    // initially nextfree == 0, so it must be initialized the first time boot_alloc() is called
-    // at the first page-scaled address after the kernel's code
-    if (!nextfree) {
-        nextfree = (char*)PGROUNDUP((physaddr_t)endkernel);
-    }
-
-    // since we need to return the first allocated address we cache the value of nexfree before incrementing it
-    result = nextfree;
-
-    if (n > 0) {
-        nextfree += PGROUNDUP(n);   // increment nextfree to n bytes page-aligned
-    }
-
-    return result;
-}
-
-// @note with usekva you can also use this function in the vm_setup where we're using physical addresses since paging is off
-physical_page_metadata_t* kalloc(int zero, int usekva) {
-    // pointer to the current free page
-    physical_page_metadata_t* pp = free_page_list;
-
-    // do nothing in case no free pages are left
-    if (!pp) {
-        return NULL;
-    }
-
-    // update free_page_list to point to the next of the current free page
-    free_page_list = pp->next;
-
-    // clear the next of pp
+    // clear pp->next
     pp->next = NULL;
 
-    // if zero is set then fill the entire physical page with 0s
-    if (zero) {
-        usekva > 0 ? memset(page2kva(pp), 0, PGSIZE) : memset(page2pa(pp), 0, PGSIZE);
-    }
-
-    // returns a pointer to the physical_page_metadata, that you can treat differently is paging is on/off
+    // return a pointer to the page's metadata
     return pp;
 }
 
-void kfree(physical_page_metadata_t* pp) {
-    // if such page has no reference counts
-    if (pp->ref_count == 0) {
-        pp->next = free_page_list;  // set his next to the current free page
-        free_page_list = pp;        // it becomes the next free page allocatable
+physical_page_metadata_t* kfree(physical_page_metadata_t* pp) {
+    if (pp->flags != PPM_KERN && pp->ref_count == 0) {
+        pp->next = pages_free_list;
+        pages_free_list = pp;
+        return pp;
     }
+    return NULL;
 }
 
-// super useful function that returns the physical address of the page table entry of a given virtual address
-// we return ALWAYS the physical address so that, if paging is on, you can simply obtain the kernel virtual address with pa2kva() otherwise just use it
 pte_t* pgdir_walk(pde_t* pgdir, uintptr_t va, int create) {
-    // optimistically compute the pte physical address
-    pte_t pte = PTE_ADDR(pgdir[PDX(va)]);
+    // extract page directory index and page table index from the virtual address
+    uint32_t pdx = PDX(va), ptx = PTX(va);
+    
+    // optimistically compute the page table address
+    physaddr_t pt = PTE_ADDR(pgdir[pdx]);
 
-    // assert that check if va is not already mapped in this page directory
-    if (!(pgdir[PDX(va)] & PTE_P)) {
-        
-        // do not create the page table
+    // if no page table exists for the provided page directory index
+    if (!(pgdir[pdx] & PTE_P)) {
+        // just return NULL if !create to let the caller know that va is not mapped
         if (!create) return NULL;
-
-        // allocate a zeroed physical page for the pte
-        physical_page_metadata_t* pp = kalloc(1, 0);
-
-        // return early on unsuccessful allocation
-        if (pp == NULL)
-            return NULL;
-
-        // physical address of the allocated page
-        pte = page2pa(pp);
-
-        // update the page directory to contain the top 20 bits of the page physical address and the present flag (PTE_P)
-        // @note page2pa() gives us a 32-bit physical address GUARANTEED to be page aligned, so we can safely store it there
-        // |-> the MMU will only use the topmost 20-bits of it + PTX(va) to find the correct pte
-        pgdir[PDX(va)] = pte | PTE_P;
         
+        // allocate a physical page to use as the page table
+        physical_page_metadata_t* pp = kalloc();
+        
+        // extract the page table address
+        pt = PTE_ADDR(page2pa(pp));
+
+        // update the page directory
+        pgdir[pdx] = pt | PTE_P | PTE_U | PTE_W;
     }
 
-    // pte contains the physical address of the start of the page table physical page so, to obtain the correct PTE,
-    // we simply add 4 * page directory index (since pte is an array of 4 bytes ptes)
-    return (pte_t*)(pte + 4 * PTX(va));
+    return (pte_t*)(pa2kva(pt) + sizeof(pte_t) * ptx);
 }
 
 physaddr_t va_to_pa(pde_t* pgdir, uintptr_t va) {
-    // get the page table entry for this virtual address - don't create if not mapped
+    // extract the page table without creating if not mapped
     pte_t* pte = pgdir_walk(pgdir, va, 0);
-    // if pte is NULL then va is not mapped
+    // if pte is NULL it means that va is not mapped
     if (pte == NULL)
         return NULL;
-    // if present bit is set add the offset otherwise return NULL since va is not mapped
-    return *pte & PTE_P 
-        ? PTE_ADDR(*pte) | PGOFFSET(va) 
+    // if the present bit is set thatn add the offset otherwise NULL
+    return *pte & PTE_P
+        ? PTE_ADDR(*pte) | PGOFFSET(va)
         : NULL;
 }
 
-int map_pp_to_va(pde_t* pgdir, physical_page_metadata_t* pp, uintptr_t va) {
-    // round down va to the nearest page multiple
+void map_va(pde_t* pgdir, uintptr_t va, physaddr_t pa) {
+    // round down both addresses to the nearest page
     va = PGROUNDDOWN(va);
-    // get the page table entry for va - create if not already mapped
+    pa = PGROUNDDOWN(pa);
+    // fetch pte for va
     pte_t* pte = pgdir_walk(pgdir, va, 1);
-    // reuturn on pgdir_walk allocation failure
-    if (pte == NULL)
-        return 0;
-    // update the page table entry
-    *pte = page2pa(pp) | PTE_P | PTE_W;
-    // return success
-    return 1;
+    // return early on error
+    if (pte == NULL) 
+        return;
+    // update the PTE
+    *pte = PTE_ADDR(pa) | PTE_P | PTE_W;
 }
 
-void pgdir_load(pde_t* pgdir) {
-    lcr3((uint32_t)&pgdir);   // load the pgdir address into CR3
+/// maps the given physical page to va
+void map_pp(pde_t* pgdir, physical_page_metadata_t* pp, uintptr_t va) {
+    map_va(pgdir, va, page2pa(pp));
 }

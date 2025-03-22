@@ -1,17 +1,17 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include <learnix/multiboot.h>
 #include <learnix/vm.h>
-#include <learnix/vga.h>
+#include <learnix/pic.h>
 #include <learnix/idt.h>
+#include <learnix/multiboot.h>
+#include <learnix/drivers/vga.h>
 #include <learnix/drivers/serial.h>
 
-void kernel_main(uint32_t magic, multiboot_info_t *mbi) {
+void kernel_main(uint32_t magic, multiboot_info_t* mbi) {
 
-    // initialize the vga terminal
+    // initialize the VGA driver
     terminal_initialize();
 
-    // multiboot controls
     if (magic != MULTIBOOT_BOOTLOADER_MAGIC) {
         panic("[GRUB] invalid magic number");
     }
@@ -19,23 +19,17 @@ void kernel_main(uint32_t magic, multiboot_info_t *mbi) {
         panic("[GRUB] invalid memory map");
     }
 
-    // initialize and remap the PIC for protected mode usage
+    // initialize the PIC
     pic_init();
 
-    // initiaize the COM1 serial port
-    if(serial_init() < 0) {
-        panic("cannot init COM1 serial port");
-    }
+    // initialize the COM1 serial port
+    serial_init();
 
-    // load the Interrupt Descriptor Table
+    // initialize the Interrupt Descriptor Table (IDT)
     idt_init();
 
-    // initialize virtual memory
+    // setup the virtual memory manager
     vm_setup(mbi->mem_lower, mbi->mem_upper);
 
-    // enables interrupts
-    asm volatile ("sti");
-
-    // hang
-    while(1);
+    while(1) {};
 }

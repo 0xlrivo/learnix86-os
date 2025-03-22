@@ -1,6 +1,6 @@
+#include <stdint.h>
 #include <learnix/pic.h>
 #include <learnix/x86/x86.h>
-#include <stdint.h>
 
 void pic_init() {
     // remap the PICs offset since we're in protected mode
@@ -10,7 +10,7 @@ void pic_init() {
     pic_set_mask(1);
 }
 
-void pic_remap(int pic1_offset, int pic2_offset) {
+static void pic_remap(int pic1_offset, int pic2_offset) {
     uint8_t mask1, mask2;
 
     // when PICs are uninitialized reading from their data ports gives us their active masks
@@ -47,7 +47,7 @@ void pic_remap(int pic1_offset, int pic2_offset) {
     outb(PIC2_DATA, mask2);
 }
 
-void pic_set_mask(uint8_t irq_line) {
+static void pic_set_mask(uint8_t irq_line) {
     uint16_t port;
     uint8_t value;
 
@@ -65,7 +65,7 @@ void pic_set_mask(uint8_t irq_line) {
     outb(port, value);
 }
 
-void pic_clear_mask(uint8_t irq_line) {
+static void pic_clear_mask(uint8_t irq_line) {
     uint16_t port;
     uint8_t value;
 

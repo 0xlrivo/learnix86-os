@@ -28,11 +28,10 @@ typedef struct _idt_entry {
 
 void idt_init();
 
-void idt_load();
+static inline void idt_load();
 
-void idt_set_gate(int n, uint32_t handler, uint16_t selector, uint8_t type_attributes);
+static inline void idt_set_gate(int n, uint32_t handler, uint16_t selector, uint8_t type_attributes);
 
-extern void irq1_wrapper();
 void irq1_handler();
 
 #endif // ! INTERRUPTS_H

@@ -1,8 +1,7 @@
-#include <stdio.h>
-#include <stdint.h>
+#include <stdlib.h>
 #include <stdbool.h>
 
-char* itoa(uint32_t value, char *str, int base) {
+char* itoa(int value, char *str, int base) {
     char *digits = "0123456789ABCDEF";
     bool is_negative = false;
     int i = 0;
@@ -17,15 +16,6 @@ char* itoa(uint32_t value, char *str, int base) {
         value /= base;
     } while(value > 0);
 
-    // pad hex numbers to 8 digits (32 bit)
-    if (base == 16) {
-        while(i < 8) {
-            str[i++] = '0';
-        }
-        str[i++] = 'x';
-        str[i++] = '0';
-    }
-
     if (is_negative)
         str[i++] = '-';
 
@@ -37,4 +27,36 @@ char* itoa(uint32_t value, char *str, int base) {
         str[j] = str[i - j - 1];
         str[i - j - 1] = tmp;
     }
+
+    return str;
+}
+
+char* itoal(uint32_t value, char* str, int base) {
+    char *digits = "0123456789ABCDEF";
+    int i = 0;
+
+    do {
+        str[i++] = digits[value % base];
+        value /= base;
+    } while(value > 0);
+
+    // pad hex numbers to 8 digits (to display 32 bit addresses better)
+    if (base == 16) {
+        while(i < 8) {
+            str[i++] = '0';
+        }
+        str[i++] = 'x';
+        str[i++] = '0';
+    }
+
+    str[i] = '\0';
+
+    // invert the string
+    for (int j = 0; j < i / 2; j++) {
+        char tmp = str[j];
+        str[j] = str[i - j - 1];
+        str[i - j - 1] = tmp;
+    }
+
+    return str;
 }

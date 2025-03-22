@@ -2,11 +2,10 @@
 #define LEARNIX_VGA_H
 
 #include <stdint.h>
-#include <stddef.h>
 
-static const size_t VGA_WIDTH = 80;
-static const size_t VGA_HEIGHT = 25;
-static uint16_t* const VGA_MEMORY = (uint16_t*) 0xB8000;
+static const uint32_t VGA_WIDTH = 80;
+static const uint32_t VGA_HEIGHT = 25;
+static uint16_t* const VGA_MEMORY = (uint16_t*)0xC03FF000;	// @note paging mapping of the VGA buffer's physical location
 
 enum vga_color {
 	VGA_COLOR_BLACK = 0,
@@ -45,7 +44,7 @@ void terminal_putchar(char c);
 /// @brief prints a string given its lenght
 /// @param data characthers buffer
 /// @param size buffer length
-void terminal_write(const char* data, size_t size);
+void terminal_write(const char* data, uint32_t size);
 
 /// @brief prints a NULL-terminated C string 
 /// @param data NULL-terminated C string

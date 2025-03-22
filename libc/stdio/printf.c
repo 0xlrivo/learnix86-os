@@ -1,6 +1,8 @@
-#include <stdarg.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
+#include <stdarg.h>
+#include <stdint.h>
 
 void printf(const char *format, ...) {
     // starg.h defined list of arguments
@@ -31,7 +33,7 @@ void printf(const char *format, ...) {
                     puts(va_arg(args, char*));
                     break;
                 }
-                // int
+                // signed int
                 case 'd': {
                     itoa(va_arg(args, int), buffer, 10);
                     puts(buffer);
@@ -39,7 +41,7 @@ void printf(const char *format, ...) {
                 }
                 // hex
                 case 'x': {
-                    itoa(va_arg(args, int), buffer, 16);
+                    itoal(va_arg(args, uint32_t), buffer, 16);
                     puts(buffer);
                     break;
                 }

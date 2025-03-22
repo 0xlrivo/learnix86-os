@@ -1,18 +1,16 @@
-#ifndef _STRING_H
-#define _STRING_H 1
+#ifndef LEARNIX_LIBC_STRING_H
+#define LEARNIX_LIBC_STRING_H
 
-#include <stddef.h>
+#include <stdint.h>
 
-int memcmp(const void*, const void*, size_t);
+int memcmp(const void*, const void*, uint32_t);
 
-void* memcpy(void* restrict dst, const void* restrict src, size_t size);
+void* memcpy(void* restrict dst, const void* restrict src, uint32_t size);
 
-void* memmove(void*, const void*, size_t);
+void* memmove(void*, const void*, uint32_t);
 
-void *memset(void *ptr, int value, size_t num);
+void *memset(void *ptr, int value, uint32_t num);
 
-size_t strlen(const char*);
-
-
+uint32_t strlen(const char*);
 
 #endif

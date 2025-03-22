@@ -1,5 +1,5 @@
-#ifndef CTYPE_H
-#define CTYPE_H
+#ifndef LEARNIX_LIBC_CTYPE_H
+#define LEARNIX_LIBC_CTYPE_H
 
 int toupper(int ch);
 

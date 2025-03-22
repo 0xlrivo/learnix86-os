@@ -1,5 +1,5 @@
-#include <string.h>
 #include <stdarg.h>
+#include <string.h>
 #include <learnix/drivers/serial.h>
 #include <learnix/x86/x86.h>
 

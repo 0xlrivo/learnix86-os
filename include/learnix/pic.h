@@ -37,13 +37,13 @@
 void pic_init();
 
 /* remaps the PIC offsets to enable its use in protected mode */
-void pic_remap(int master_offset, int slave_offset);
+static void pic_remap(int master_offset, int slave_offset);
 
 /* enables the specified IRQ line */
-void pic_set_mask(uint8_t irq_line);
+static void pic_set_mask(uint8_t irq_line);
 
 /* disables the specified IRQ line */
-void pic_clear_mask(uint8_t irq_line);
+static void pic_clear_mask(uint8_t irq_line);
 
 /* sends the End-Of-Interrupt command */
 void pic_send_eoi(uint8_t irq);

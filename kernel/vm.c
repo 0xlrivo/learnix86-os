@@ -1,10 +1,11 @@
+#include <stdint.h>
 #include <stdio.h>
-#include <stdlib.h>
 #include <string.h>
 #include <learnix/vm.h>
 #include <learnix/x86/x86.h>
 #include <learnix/x86/mmu.h>
 
+// points to the first byte after kernel code
 extern char _kernel_end[];
 
 // symbol defined in boot/boot.S which points to the kernel's page directory
@@ -84,13 +85,13 @@ void pages_setup() {
     }
 }
 
-physical_page_metadata_t* kalloc() {
+physical_page_metadata_t* page_alloc() {
     // fetch the next free page from the linked list
     physical_page_metadata_t* pp = pages_free_list;
 
     // panic if out-of-pages
     if (pp == NULL)
-        panic("[KALLOC] out-of-pages");
+        panic("page_alloc: out of physical pages");
 
     // update the free_page_list
     pages_free_list = pp->next;
@@ -102,7 +103,10 @@ physical_page_metadata_t* kalloc() {
     return pp;
 }
 
-physical_page_metadata_t* kfree(physical_page_metadata_t* pp) {
+physical_page_metadata_t* page_free(physical_page_metadata_t* pp) {
+	// pages can only be freed if 
+	// 1) they are NOT kernel pages (flags != PPM_KERNEL)
+	// 2) they have a reference count of 0
     if (pp->flags != PPM_KERN && pp->ref_count == 0) {
         pp->next = pages_free_list;
         pages_free_list = pp;
@@ -124,7 +128,7 @@ pte_t* pgdir_walk(pde_t* pgdir, uintptr_t va, int create) {
         if (!create) return NULL;
         
         // allocate a physical page to use as the page table
-        physical_page_metadata_t* pp = kalloc();
+        physical_page_metadata_t* pp = page_alloc();
         
         // extract the page table address
         pt = PTE_ADDR(page2pa(pp));
@@ -164,4 +168,34 @@ void map_va(pde_t* pgdir, uintptr_t va, physaddr_t pa) {
 /// maps the given physical page to va
 void map_pp(pde_t* pgdir, physical_page_metadata_t* pp, uintptr_t va) {
     map_va(pgdir, va, page2pa(pp));
+}
+
+// removes the mapping of va from pgdir
+void
+unmap_va(pde_t* pgdir, uintptr_t va)
+{
+	// round down va to the nearest page
+	va = PGROUNDDOWN(va);
+	// try to get va's PTE
+	pte_t* pte = pgdir_walk(pgdir, va, 0);
+	// if pte == NULL va is not mapped
+	// so we return early
+	if (pte == NULL)
+		return;
+
+	// otherwise we need to:
+	// 1) clear the page table entry of va
+	*pte = 0;
+	// 2) free the PTE's physical page if all 0
+	for (void* i = PGROUNDDOWN(pte), i < PGROUNDUP(pte); ++i)
+	{
+		// if at least one PTE is not empty
+		// we can't free this page table
+		// physical page
+		if (*i != 0) return;
+	}
+	// in case this loop completes
+	// this page table physical page
+	// can be freed
+	// TODO
 }

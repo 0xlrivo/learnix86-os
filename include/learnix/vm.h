@@ -1,5 +1,4 @@
-#ifndef VM_H
-#define VM_H
+#pragma once
 
 #include <stdint.h>
 #include <stdlib.h>
@@ -96,10 +95,10 @@ void vm_setup(uint32_t memlower, uint32_t memupper);
 void pages_setup();
 
 /// returns the next free physical page
-physical_page_metadata_t* kalloc();
+physical_page_metadata_t* page_alloc();
 
 /// frees the provided physical page if ref_count is 0 and returns it, NULL on error
-physical_page_metadata_t* kfree(physical_page_metadata_t* pp);
+physical_page_metadata_t* page_free(physical_page_metadata_t* pp);
 
 /// returns a pointer to the pte (page table entry) of given virtual address (va)
 /// @param pgdir pointer to the page directory to use
@@ -117,4 +116,6 @@ void map_va(pde_t* pgdir, uintptr_t va, physaddr_t pa);
 /// maps the given physical page to va
 void map_pp(pde_t* pgdir, physical_page_metadata_t* pp, uintptr_t va);
 
-#endif // !VM_H
+// removes the mapping of va and frees (if possible) the physical page
+// of his page table
+void unmap_va(pde_t* pgdir, uintptr_t va);

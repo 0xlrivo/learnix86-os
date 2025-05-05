@@ -1,0 +1,7 @@
+CompileFlags:
+  Add: [
+    "-Iinclude",
+    "-Ilibc/include",
+    "-D__is_libk"
+  ]
+

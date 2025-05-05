@@ -2,7 +2,7 @@ AS = i686-elf-as
 GCC = i686-elf-gcc
 
 # Kernel compilation flags
-KERN_GCCFLAGS = -ffreestanding -O2 -Wall -Wextra -I include -I libc/include -D__is_libk -g
+KERN_GCCFLAGS = -ffreestanding -O2 -Wall -Wextra -I include -I libc/include -D__is_libk -g -mgeneral-regs-only
 # LIBC compilation flags
 LIBC_GCCFLAGS = -ffreestanding -O2 -Wall -Wextra
 

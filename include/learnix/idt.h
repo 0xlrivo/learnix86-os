@@ -26,6 +26,15 @@ typedef struct _idt_entry {
    uint16_t offset_high;       // offset bits 16..31
 } __attribute__((packed)) idte_t;
 
+typedef struct _interrupt_frame
+{
+	uint32_t ip;   // instruction at which the exception happened
+	uint32_t cs;
+	uint32_t flags;
+	uint32_t sp;
+	uint32_t ss;
+} interrupt_frame_t;
+
 void idt_init();
 
 static inline void idt_load();

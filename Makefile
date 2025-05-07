@@ -49,5 +49,9 @@ qemu: setup kernel
 gdb: setup kernel
 	qemu-system-i386 -kernel $(OUTDIR)/learnixos.bin -s -S
 
+format:
+	clang-format -i $(KERN_CFILES)
+	clang-format -i $(LIBC_CFILES)
+
 clean:
 	rm -rf $(OUTDIR)

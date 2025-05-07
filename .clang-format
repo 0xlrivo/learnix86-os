@@ -1,0 +1,6 @@
+BasedOnStyle: GNU
+IndentWidth: 8        # This doesn't matter much when using tabs
+TabWidth: 8
+UseTab: ForIndentation
+BreakBeforeBraces: Allman
+SpaceBeforeParens: ControlStatements

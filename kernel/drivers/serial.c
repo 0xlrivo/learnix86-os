@@ -1,4 +1,5 @@
 #include <stdarg.h>
+#include <stdint.h>
 #include <string.h>
 #include <learnix/drivers/serial.h>
 #include <learnix/x86/x86.h>
@@ -91,7 +92,7 @@ void serial_printf(const char *format, ...) {
                 }
                 // hex
                 case 'x': {
-                    itoa(va_arg(args, int), buffer, 16);
+                    itoal(va_arg(args, uint32_t), buffer, 16);
                     serial_write(buffer);
                     break;
                 }

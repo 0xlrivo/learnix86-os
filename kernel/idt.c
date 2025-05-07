@@ -33,7 +33,9 @@ __attribute__((interrupt))
 void
 page_fault_exception(interrupt_frame_t* frame, uint32_t error_code)
 {
-	printf("Page fault at %x\n", frame->ip);
+	// cr2 is set as the virtual address which caused the fault
+	uintptr_t fault_va = rcr2();
+	printf("[PAGE FAULT] eip=%x tried accessing va=%x\n| with error: ", frame->ip, fault_va);
 	// check P bit (0th of error_code)
 	if ((error_code & 0x1) == 0)
 	{

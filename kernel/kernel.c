@@ -30,7 +30,5 @@ void kernel_main(uint32_t magic, multiboot_info_t* mbi) {
     // setup the virtual memory manager
     vm_setup(mbi->mem_lower, mbi->mem_upper);
 
-	printf("%d\n", *(int*)KERN_BASE_PHYS);
-
     while(1) {};
 }

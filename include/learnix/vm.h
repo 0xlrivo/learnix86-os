@@ -52,6 +52,16 @@ typedef uint32_t physaddr_t;      // physical address
 // physical page metadata flags:
 #define PPM_KERN 0x000F             // is a kernel's code physical page
 
+// RECURSIVE MAPPING MACROS
+
+// returns the virtual address of
+// the last entry of the page directory
+#define PGDIR_VADDR   ((pde_t*)0xFFFFF000);
+// returns the recursively mapped
+// virtual address to access the
+// given page table
+#define PT_VADDR(pdx) ((pte_t*)(0xFFC00000 + (pdx << 12)));
+
 /// physical page metadata
 /// @param next pointer to the next free page
 /// @param ref_count number of virtual memory mappings to this physical page
@@ -73,6 +83,10 @@ inline physaddr_t page2pa(physical_page_metadata_t *pp) {
 	return EXT_MEM_BASE + ((pp - pages) * PGSIZE);
 }
 
+inline physical_page_metadata_t* pa2pp(physaddr_t pa) {
+	return &pages[page_num(pa)];
+}
+
 /// returns the corresponding kernel virtual address (>3GB) of the physical address provided
 /// @param pa the physical address to translate
 inline void* pa2kva(physaddr_t pa) {
@@ -87,6 +101,9 @@ inline void* pp2kva(physical_page_metadata_t* pp) {
 inline physaddr_t kva2pa(uintptr_t va) {
     return (physaddr_t)(va - KERN_BASE_VRT);
 }
+
+void
+test_vm_system();
 
 /// called once in kernel_main to initialize the virtual memory system
 void vm_setup(uint32_t memlower, uint32_t memupper);

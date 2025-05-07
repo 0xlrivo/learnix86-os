@@ -5,7 +5,6 @@
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <string.h>
 
 // points to the first byte after kernel code
 extern char _kernel_end[];
@@ -91,7 +90,7 @@ pages_setup()
 
 	serial_printf("[LOG] mapping pages[]\n");
 	// and map those starting from 1MB physical
-	for (i = 0, va = pages, pa = EXT_MEM_BASE; i < pages_to_map;
+	for (i = 0, va = (uintptr_t)pages, pa = EXT_MEM_BASE; i < pages_to_map;
 	     i++, va += PGSIZE, pa += PGSIZE)
 	{
 		map_va(kern_pgdir, va, pa);
@@ -116,7 +115,7 @@ pages_setup()
 	}
 
 	// 2MB - endkernel is occupied by kernel code
-	for (i = page_num(KERN_BASE_PHYS); i < page_num(kva2pa(_kernel_end));
+	for (i = page_num(KERN_BASE_PHYS); i < page_num(kva2pa((uintptr_t)_kernel_end));
 	     i++)
 	{
 		pages[i].ref_count = 0;
@@ -218,8 +217,8 @@ va_to_pa(pde_t *pgdir, uintptr_t va)
 	// if pte is NULL it means that va is not mapped
 	if (pte == NULL)
 		return NULL;
-	// if the present bit is set thatn add the offset otherwise NULL
-	return *pte & PTE_P ? PTE_ADDR(*pte) | PGOFFSET(va) : NULL;
+	// if the present bit is set then add the offset otherwise NULL
+	return (physaddr_t)(*pte & PTE_P ? PTE_ADDR(*pte) | PGOFFSET(va) : NULL);
 }
 
 void

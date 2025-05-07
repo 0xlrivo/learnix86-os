@@ -1,7 +1,6 @@
 #pragma once
 
 #include <stdint.h>
-#include <stdlib.h>
 #include <learnix/x86/mmu.h>
 
 /*
@@ -102,9 +101,6 @@ inline physaddr_t kva2pa(uintptr_t va) {
     return (physaddr_t)(va - KERN_BASE_VRT);
 }
 
-void
-test_vm_system();
-
 /// called once in kernel_main to initialize the virtual memory system
 void vm_setup(uint32_t memlower, uint32_t memupper);
 
@@ -136,3 +132,9 @@ void map_pp(pde_t* pgdir, physical_page_metadata_t* pp, uintptr_t va);
 // removes the mapping of va and frees (if possible) the physical page
 // of his page table
 void unmap_va(pde_t* pgdir, uintptr_t va);
+
+void
+test_vm_system();
+
+void
+dbg_dump_pgdir(pde_t* pgdir, const char* name);

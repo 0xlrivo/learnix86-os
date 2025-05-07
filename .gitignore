@@ -1,2 +1,9 @@
+# compilation folder
 out/
+
+# clangd cache
+compile_commands.json
+.cache/
+
+# extensions
 *.log

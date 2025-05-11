@@ -4,6 +4,8 @@
 #include <stdint.h>
 #include <stddef.h>
 
+#define NULL 0
+
 #define EOF (-1)
 
 /// writes a characther on the standard output

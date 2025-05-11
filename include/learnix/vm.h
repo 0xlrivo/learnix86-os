@@ -101,6 +101,8 @@ inline physaddr_t kva2pa(uintptr_t va) {
     return (physaddr_t)(va - KERN_BASE_VRT);
 }
 
+extern pde_t* kern_pgdir;
+
 /// called once in kernel_main to initialize the virtual memory system
 void vm_setup(uint32_t memlower, uint32_t memupper);
 

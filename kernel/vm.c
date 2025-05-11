@@ -1,3 +1,4 @@
+#include "learnix/kheap.h"
 #include <learnix/drivers/serial.h>
 #include <learnix/vm.h>
 #include <learnix/x86/mmu.h>
@@ -23,7 +24,7 @@ physical_page_metadata_t *pages;
 physical_page_metadata_t *pages_free_list;
 
 // kernel page directory's virtual address
-pde_t *kern_pgdir;
+pde_t* kern_pgdir;
 
 void
 test_vm_system()
@@ -44,7 +45,7 @@ test_vm_system()
 	if (pages_free_list != page_dir_phys_page)
 		panic("VM TEST #2");
 	dbg_dump_pgdir(kern_pgdir, "kernel");
-	serial_printf("pages_free_list: %x", page2pa(pages_free_list));
+	serial_printf("pages_free_list: %x\n", page2pa(pages_free_list));
 
 	printf("[ OK ] VM TEST PASSED!\n");
 }
@@ -72,6 +73,11 @@ vm_setup(uint32_t memlower, uint32_t memupper)
 
 	// TEST
 	test_vm_system();
+	
+	// initialize the kernel heap
+	// at the first virtual page after
+	// the end of kernel's code
+	kheap_init((uintptr_t)_kernel_end);
 }
 
 // @todo also allocate low-mem pages after parsing multiboot struct
